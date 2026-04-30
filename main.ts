@@ -1,8 +1,31 @@
-export function add(a: number, b: number): number {
-  return a + b;
+import { serveDir, serveFile } from "jsr:@std/http/file-server";
+
+// make a data set of a list of photos from the photos folder
+const pages: string[] = [];
+for await (const file of Deno.readDir(`./pages`)) {
+  pages.push(file.name);
 }
 
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
-if (import.meta.main) {
-  console.log("Add 2 + 3 =", add(2, 3));
-}
+console.log(pages);
+
+Deno.serve((req: Request) => {
+  const pathname = new URL(req.url).pathname;
+
+
+
+  if (pathname.startsWith("/static")) {
+    return serveDir(req, {
+      fsRoot: "public",
+      urlRoot: "static",
+    });
+  }
+
+  if(pages.includes(pathname.slice(1))) {
+    return serveFile(req, `./pages${pathname}`);
+  }
+
+  
+  return new Response("404: Not Found", {
+    status: 404,
+  });
+});
